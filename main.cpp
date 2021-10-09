@@ -50,7 +50,11 @@ int WINAPI WinMain (
     return iMessageLoop;
 }
 
-LRESULT CALLBACK WindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowProcedure (
+    HWND hwnd,
+    UINT message,
+    WPARAM wParam,
+    LPARAM lParam)
 {
     switch (message)                  /* handle the messages */
     {
