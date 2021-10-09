@@ -13,6 +13,7 @@
 int _RegisterMainClass (HINSTANCE hInstance);
 HWND _CreateMainWindow (HINSTANCE hInstance);
 LRESULT CALLBACK WindowProcedure (HWND, UINT, WPARAM, LPARAM);
+int _MessageLoop (HWND hWnd = NULL);
 
 int WINAPI WinMain (
     HINSTANCE hThisInstance,
@@ -20,8 +21,8 @@ int WINAPI WinMain (
     LPSTR lpszArgument,
     int nCmdShow)
 {
-    HWND hwnd;               /* This is the handle for our window */
-    MSG messages;            /* Here messages to the application are saved */
+    HWND hWnd;
+    int iMessageLoop;
 
     /* Register the window class, and if it fails quit the program */
     if (!_RegisterMainClass (hThisInstance))
@@ -31,31 +32,24 @@ int WINAPI WinMain (
     }
 
     /* The class is registered, let's create the program*/
-    hwnd = _CreateMainWindow (hThisInstance);
+    hWnd = _CreateMainWindow (hThisInstance);
 
-    if (!hwnd)
+    if (!hWnd)
     {
         MSG_ERROR ("Failed to created main window!!!");
         return 0;
     }
 
     /* Make the window visible on the screen */
-    ShowWindow (hwnd, nCmdShow);
+    ShowWindow (hWnd, nCmdShow);
 
     /* Run the message loop. It will run until GetMessage() returns 0 */
-    while( GetMessage (&messages, NULL, 0, 0) )
-    {
-        /* Translate virtual-key messages into character messages */
-        TranslateMessage (&messages);
-        /* Send message to WindowProcedure */
-        DispatchMessage (&messages);
-    }
+    iMessageLoop = _MessageLoop();
 
     /* The program return-value is 0 - The value that PostQuitMessage() gave */
-    return messages.wParam;
+    return iMessageLoop;
 }
 
-/*  This function is called by the Windows function DispatchMessage()  */
 LRESULT CALLBACK WindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)                  /* handle the messages */
@@ -116,4 +110,17 @@ HWND _CreateMainWindow (HINSTANCE hInstance)
         return 0;
 
     return hWnd;
+}
+
+int _MessageLoop (HWND hWnd)
+{
+    MSG msg = {0};
+
+    while ( GetMessage(&msg, NULL, 0, 0) )
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    return msg.wParam;
 }
