@@ -6,88 +6,148 @@
 
 #include <tchar.h>
 #include <windows.h>
+#include "ntperrors.h"
+#include "CEditor.h"
+#include "Common.h"
 
-/*  Declare Windows procedure  */
+using namespace Common;
+
+#define DEFAULT_CAPTION "Notepad"
+
+int _RegisterMainClass (HINSTANCE hInstance);
+HWND _CreateMainWindow (HINSTANCE hInstance);
 LRESULT CALLBACK WindowProcedure (HWND, UINT, WPARAM, LPARAM);
+int _MessageLoop (HWND hWnd = NULL);
 
-/*  Make the class name into a global variable  */
-TCHAR szClassName[ ] = _T("CodeBlocksWindowsApp");
-
-int WINAPI WinMain (HINSTANCE hThisInstance,
-                     HINSTANCE hPrevInstance,
-                     LPSTR lpszArgument,
-                     int nCmdShow)
+int WINAPI WinMain (
+    HINSTANCE hThisInstance,
+    HINSTANCE hPrevInstance,
+    LPSTR lpszArgument,
+    int nCmdShow)
 {
-    HWND hwnd;               /* This is the handle for our window */
-    MSG messages;            /* Here messages to the application are saved */
-    WNDCLASSEX wincl;        /* Data structure for the windowclass */
-
-    /* The Window structure */
-    wincl.hInstance = hThisInstance;
-    wincl.lpszClassName = szClassName;
-    wincl.lpfnWndProc = WindowProcedure;      /* This function is called by windows */
-    wincl.style = CS_DBLCLKS;                 /* Catch double-clicks */
-    wincl.cbSize = sizeof (WNDCLASSEX);
-
-    /* Use default icon and mouse-pointer */
-    wincl.hIcon = LoadIcon (NULL, IDI_APPLICATION);
-    wincl.hIconSm = LoadIcon (NULL, IDI_APPLICATION);
-    wincl.hCursor = LoadCursor (NULL, IDC_ARROW);
-    wincl.lpszMenuName = NULL;                 /* No menu */
-    wincl.cbClsExtra = 0;                      /* No extra bytes after the window class */
-    wincl.cbWndExtra = 0;                      /* structure or the window instance */
-    /* Use Windows's default colour as the background of the window */
-    wincl.hbrBackground = (HBRUSH) COLOR_BACKGROUND;
+    HWND hWnd;
+    int iMessageLoop;
 
     /* Register the window class, and if it fails quit the program */
-    if (!RegisterClassEx (&wincl))
-        return 0;
-
-    /* The class is registered, let's create the program*/
-    hwnd = CreateWindowEx (
-           0,                   /* Extended possibilites for variation */
-           szClassName,         /* Classname */
-           _T("Code::Blocks Template Windows App"),       /* Title Text */
-           WS_OVERLAPPEDWINDOW, /* default window */
-           CW_USEDEFAULT,       /* Windows decides the position */
-           CW_USEDEFAULT,       /* where the window ends up on the screen */
-           544,                 /* The programs width */
-           375,                 /* and height in pixels */
-           HWND_DESKTOP,        /* The window is a child-window to desktop */
-           NULL,                /* No menu */
-           hThisInstance,       /* Program Instance handler */
-           NULL                 /* No Window Creation data */
-           );
-
-    /* Make the window visible on the screen */
-    ShowWindow (hwnd, nCmdShow);
-
-    /* Run the message loop. It will run until GetMessage() returns 0 */
-    while (GetMessage (&messages, NULL, 0, 0))
+    if (!_RegisterMainClass (hThisInstance))
     {
-        /* Translate virtual-key messages into character messages */
-        TranslateMessage(&messages);
-        /* Send message to WindowProcedure */
-        DispatchMessage(&messages);
+        MSG_ERROR("Failed to register main window!!!");
+        return 0;
     }
 
+    /* The class is registered, let's create the program*/
+    hWnd = _CreateMainWindow (hThisInstance);
+
+    if (!hWnd)
+    {
+        MSG_ERROR ("Failed to created main window!!!");
+        return 0;
+    }
+
+    /* Make the window visible on the screen */
+    ShowWindow (hWnd, nCmdShow);
+
+    /* Run the message loop. It will run until GetMessage() returns 0 */
+    iMessageLoop = _MessageLoop();
+
     /* The program return-value is 0 - The value that PostQuitMessage() gave */
-    return messages.wParam;
+    return iMessageLoop;
 }
 
-
-/*  This function is called by the Windows function DispatchMessage()  */
-
-LRESULT CALLBACK WindowProcedure (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowProcedure (
+    HWND hWnd,
+    UINT uMsg,
+    WPARAM wParam,
+    LPARAM lParam)
 {
-    switch (message)                  /* handle the messages */
+    static CEditor editor;
+    static Common::TFont font;
+
+    switch (uMsg)
     {
+        case WM_CREATE:
+        {
+            editor.Create (hWnd, 625, 421, "Hello World!!!");
+            Common::SetFont (editor.GetHandler(), font);
+            SetFocus (editor.GetHandler());
+
+        } break;
+
+        case WM_SIZE:
+        {
+            int width = LOWORD (lParam);
+            int height = HIWORD (lParam);
+            MoveWindow (editor.GetHandler(), 0, 0, width, height, TRUE);
+        } break;
+
         case WM_DESTROY:
-            PostQuitMessage (0);       /* send a WM_QUIT to the message queue */
+            PostQuitMessage (0);
             break;
-        default:                      /* for messages that we don't deal with */
-            return DefWindowProc (hwnd, message, wParam, lParam);
+
+        default:
+            return DefWindowProc (hWnd, uMsg, wParam, lParam);
     }
 
     return 0;
+}
+
+int _RegisterMainClass (HINSTANCE hInstance)
+{
+    WNDCLASSEX wce = {0};
+
+    wce.cbSize        = sizeof (WNDCLASSEX);
+    wce.style         = CS_DBLCLKS;
+    wce.lpfnWndProc   = WindowProcedure;
+    wce.cbClsExtra    = 0;
+    wce.cbWndExtra    = 0;
+    wce.hInstance     = hInstance;
+    wce.hIcon         = LoadIcon (NULL, IDI_APPLICATION);
+    wce.hIconSm       = LoadIcon (NULL, IDI_APPLICATION);
+    wce.hCursor       = LoadCursor (NULL, IDC_ARROW);
+    wce.hbrBackground = (HBRUSH) COLOR_WINDOW;
+    wce.lpszMenuName  = NULL; // no menu
+    wce.lpszClassName = _T("Notepad_Wnd");
+
+    if (!RegisterClassEx(&wce))
+        return 0;
+
+    return 1;
+}
+
+HWND _CreateMainWindow (HINSTANCE hInstance)
+{
+    HWND hWnd = 0;
+
+    hWnd = CreateWindowEx (
+        0,                      // extended styles
+        _T("Notepad_Wnd"),      // class name
+        _T(DEFAULT_CAPTION),          // window caption
+        WS_OVERLAPPEDWINDOW,    // styles
+        CW_USEDEFAULT,          // x
+        CW_USEDEFAULT,          // y
+        640,                    // cx
+        480,                    // cy
+        NULL,                   // parent window
+        NULL,                   // hmenu
+        hInstance,              // app instance
+        NULL                    // additional application data
+    );
+
+    if (!hWnd)
+        return 0;
+
+    return hWnd;
+}
+
+int _MessageLoop (HWND hWnd)
+{
+    MSG msg = {0};
+
+    while ( GetMessage(&msg, NULL, 0, 0) )
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+
+    return msg.wParam;
 }
