@@ -37,6 +37,10 @@
 			<Add library="kernel32" />
 			<Add library="comctl32" />
 		</Linker>
+		<Unit filename="CEditor.cpp" />
+		<Unit filename="CEditor.h" />
+		<Unit filename="Common.cpp" />
+		<Unit filename="Common.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="ntperrors.h" />
 		<Extensions>

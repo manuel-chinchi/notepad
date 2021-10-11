@@ -7,6 +7,10 @@
 #include <tchar.h>
 #include <windows.h>
 #include "ntperrors.h"
+#include "CEditor.h"
+#include "Common.h"
+
+using namespace Common;
 
 #define DEFAULT_CAPTION "Notepad"
 
@@ -51,18 +55,37 @@ int WINAPI WinMain (
 }
 
 LRESULT CALLBACK WindowProcedure (
-    HWND hwnd,
-    UINT message,
+    HWND hWnd,
+    UINT uMsg,
     WPARAM wParam,
     LPARAM lParam)
 {
-    switch (message)                  /* handle the messages */
+    static CEditor editor;
+    static Common::TFont font;
+
+    switch (uMsg)
     {
+        case WM_CREATE:
+        {
+            editor.Create (hWnd, 625, 421, "Hello World!!!");
+            Common::SetFont (editor.GetHandler(), font);
+            SetFocus (editor.GetHandler());
+
+        } break;
+
+        case WM_SIZE:
+        {
+            int width = LOWORD (lParam);
+            int height = HIWORD (lParam);
+            MoveWindow (editor.GetHandler(), 0, 0, width, height, TRUE);
+        } break;
+
         case WM_DESTROY:
-            PostQuitMessage (0);       /* send a WM_QUIT to the message queue */
+            PostQuitMessage (0);
             break;
-        default:                      /* for messages that we don't deal with */
-            return DefWindowProc (hwnd, message, wParam, lParam);
+
+        default:
+            return DefWindowProc (hWnd, uMsg, wParam, lParam);
     }
 
     return 0;
@@ -98,7 +121,7 @@ HWND _CreateMainWindow (HINSTANCE hInstance)
     hWnd = CreateWindowEx (
         0,                      // extended styles
         _T("Notepad_Wnd"),      // class name
-        _T("Notepad"),          // window title
+        _T(DEFAULT_CAPTION),          // window caption
         WS_OVERLAPPEDWINDOW,    // styles
         CW_USEDEFAULT,          // x
         CW_USEDEFAULT,          // y
