@@ -14,7 +14,7 @@ namespace Common
     struct TFont
     {
         // members of struct public by default
-        char *pszName = "Consolas";
+        const char *pszName = "Consolas";
         int iSize = DEF_TFONT_SIZE;
         FontStyle eStyle = FontStyle::FontStyleRegular;
     };
