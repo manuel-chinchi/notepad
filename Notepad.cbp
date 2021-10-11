@@ -41,7 +41,7 @@
 		<Unit filename="CEditor.h" />
 		<Unit filename="Common.cpp" />
 		<Unit filename="Common.h" />
-		<Unit filename="main.cpp" />
+		<Unit filename="Notepad.cpp" />
 		<Unit filename="ntperrors.h" />
 		<Extensions>
 			<lib_finder disable_auto="1" />
